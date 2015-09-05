@@ -12,7 +12,7 @@ find_package(platform REQUIRED)
 find_package(TinyXML REQUIRED)
 
 # Grab the addon version info from the addon.xml file
-FILE(READ ${PROJECT_NAME}/addon.xml MPTV_ADDONXML)
+FILE(READ ${PROJECT_NAME}/addon.xml.in MPTV_ADDONXML)
 STRING(REGEX MATCH "<addon[^>]*version.?=.?.[0-9\\.]+" MPTV_VERSION_STRING ${MPTV_ADDONXML})
 STRING(REGEX REPLACE ".*version=.([0-9\\.]+).*" "\\1" MPTV_VERSION ${MPTV_VERSION_STRING})
 
