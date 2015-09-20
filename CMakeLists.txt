@@ -55,7 +55,8 @@ if(WIN32)
 endif(WIN32)
 
 # Header files
-set(MPTV_HEADERS src/Cards.h
+set(MPTV_HEADERS addon_version.h
+                 src/Cards.h
                  src/channels.h
                  src/client.h
                  src/DateTime.h
