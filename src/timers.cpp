@@ -143,6 +143,7 @@ void cTimer::GetPVRtimerinfo(PVR_TIMER &tag)
   /* TODO: Implement own timer types to get support for the timer features introduced with PVR API 1.9.7 */
   tag.iTimerType = PVR_TIMER_TYPE_NONE;
 
+#if 0 // TODO: fixme for Kodi 16.x series modifications
   if (m_progid != 0)
   {
     // Use the EPG (program) id as unique id to see all scheduled programs in the EPG and timer list
@@ -156,6 +157,7 @@ void cTimer::GetPVRtimerinfo(PVR_TIMER &tag)
     snprintf(tag.strDirectory, sizeof(tag.strDirectory)-1, "%u/%u", m_index, m_progid);
   }
   else
+#endif
   {
     tag.iClientIndex   = m_index; //Support older TVServer and Manual Schedule having a program name that does not have a match in MP EPG.
     tag.iEpgUid        = 0;
@@ -168,7 +170,15 @@ void cTimer::GetPVRtimerinfo(PVR_TIMER &tag)
     tag.state           = PVR_TIMER_STATE_SCHEDULED;
   else
     tag.state           = PVR_TIMER_STATE_CANCELLED;
-  tag.iClientChannelUid = m_channel;
+
+  if (m_schedtype == TvDatabase::EveryTimeOnEveryChannel)
+  {
+    tag.iClientChannelUid = PVR_TIMER_ANY_CHANNEL;
+  }
+  else
+  {
+    tag.iClientChannelUid = m_channel;
+  }
   PVR_STRCPY(tag.strTitle, m_title.c_str());
   tag.startTime = m_startTime.GetAsTime();
   tag.endTime = m_endTime.GetAsTime();
@@ -178,16 +188,21 @@ void cTimer::GetPVRtimerinfo(PVR_TIMER &tag)
   if(Repeat())
   {
     tag.firstDay = m_startTime.GetAsTime();
-  } else {
-    tag.firstDay        = 0;
+    tag.iParentClientIndex = PVR_TIMER_NO_PARENT; //TODO: fixme...
   }
-  tag.iPriority         = Priority();
+  else {
+    tag.firstDay        = 0;
+    tag.iParentClientIndex = PVR_TIMER_NO_PARENT;
+  }
+  tag.iTimerType = ((int)m_schedtype) + cKodiTimerTypeOffset;
+  tag.iPriority = Priority();
   tag.iLifetime         = GetLifetime();
   tag.iWeekdays         = RepeatFlags();
   tag.iMarginStart      = m_prerecordinterval;
   tag.iMarginEnd        = m_postrecordinterval;
   tag.iGenreType        = 0;
   tag.iGenreSubType     = 0;
+  PVR_STRCPY(tag.strDirectory, "Marcel");
 }
 
 time_t cTimer::StartTime(void) const
@@ -302,8 +317,6 @@ bool cTimer::ParseLine(const char *s)
 
 int cTimer::SchedRecType2RepeatFlags(TvDatabase::ScheduleRecordingType schedtype)
 {
-  // margro: the meaning of the XBMC-PVR Weekdays field is undocumented.
-  // Assuming that VDR is the source for this field:
   //   This field contains a bitmask that corresponds to the days of the week at which this timer runs
   //   It is based on the VDR Day field format "MTWTF--"
   //   The format is a 1 bit for every enabled day and a 0 bit for a disabled day
@@ -316,10 +329,10 @@ int cTimer::SchedRecType2RepeatFlags(TvDatabase::ScheduleRecordingType schedtype
   switch (schedtype)
   {
     case TvDatabase::Once:
-      weekdays = 0;
+      weekdays = PVR_WEEKDAY_NONE;
       break;
     case TvDatabase::Daily:
-      weekdays = 127; // 0111 1111
+      weekdays = PVR_WEEKDAY_ALLDAYS; // 0111 1111
       break;
     case TvDatabase::Weekly:
     case TvDatabase::WeeklyEveryTimeOnThisChannel:
@@ -339,20 +352,22 @@ int cTimer::SchedRecType2RepeatFlags(TvDatabase::ScheduleRecordingType schedtype
       }
     case TvDatabase::EveryTimeOnThisChannel:
       // Don't know what to do with this MediaPortal option?
-      weekdays = 127; // 0111 1111 (daily)
+      weekdays = PVR_WEEKDAY_ALLDAYS; // 0111 1111 (daily)
       break;
     case TvDatabase::EveryTimeOnEveryChannel:
       // Don't know what to do with this MediaPortal option?
-      weekdays = 127; // 0111 1111 (daily)
+      weekdays = PVR_WEEKDAY_ALLDAYS; // 0111 1111 (daily)
       break;
     case TvDatabase::Weekends:
-      weekdays = 96; // 0110 0000
+      // 0110 0000
+      weekdays = PVR_WEEKDAY_SATURDAY | PVR_WEEKDAY_SUNDAY;
       break;
     case TvDatabase::WorkingDays:
-      weekdays = 31; // 0001 1111
+      // 0001 1111
+      weekdays = PVR_WEEKDAY_MONDAY | PVR_WEEKDAY_TUESDAY | PVR_WEEKDAY_WEDNESDAY | PVR_WEEKDAY_THURSDAY | PVR_WEEKDAY_FRIDAY;
       break;
     default:
-      weekdays=0;
+      weekdays = PVR_WEEKDAY_NONE;
   }
 
   return weekdays;
@@ -371,24 +386,24 @@ TvDatabase::ScheduleRecordingType cTimer::RepeatFlags2SchedRecType(int repeatfla
 
   switch (repeatflags)
   {
-    case 0:
+    case PVR_WEEKDAY_NONE:
       return TvDatabase::Once;
       break;
-    case 1: //Monday
-    case 2: //Tuesday
-    case 4: //Wednesday
-    case 8: //Thursday
-    case 16: //Friday
-    case 32: //Saturday
-    case 64: //Sunday
+    case PVR_WEEKDAY_MONDAY:
+    case PVR_WEEKDAY_TUESDAY:
+    case PVR_WEEKDAY_WEDNESDAY:
+    case PVR_WEEKDAY_THURSDAY:
+    case PVR_WEEKDAY_FRIDAY:
+    case PVR_WEEKDAY_SATURDAY:
+    case PVR_WEEKDAY_SUNDAY:
       return TvDatabase::Weekly;
       break;
-    case 31:  // 0001 1111
+    case (PVR_WEEKDAY_MONDAY | PVR_WEEKDAY_TUESDAY | PVR_WEEKDAY_WEDNESDAY | PVR_WEEKDAY_THURSDAY | PVR_WEEKDAY_FRIDAY):  // 0001 1111
       return TvDatabase::WorkingDays;
-    case 96:  // 0110 0000
+    case (PVR_WEEKDAY_SATURDAY | PVR_WEEKDAY_SUNDAY):  // 0110 0000
       return TvDatabase::Weekends;
       break;
-    case 127: // 0111 1111
+    case PVR_WEEKDAY_ALLDAYS: // 0111 1111
       return TvDatabase::Daily;
       break;
     default:

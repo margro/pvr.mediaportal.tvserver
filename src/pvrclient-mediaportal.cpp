@@ -1196,6 +1196,8 @@ int cPVRClientMediaPortal::GetNumTimers(void)
 
 PVR_ERROR cPVRClientMediaPortal::GetTimers(ADDON_HANDLE handle)
 {
+  /* TODO: Change implementation to get support for the timer features introduced with PVR API 1.9.7 */
+
   vector<string>  lines;
   string          result;
   PVR_TIMER       tag;
@@ -1263,6 +1265,152 @@ PVR_ERROR cPVRClientMediaPortal::GetTimerInfo(unsigned int timernumber, PVR_TIME
   timer.GetPVRtimerinfo(timerinfo);
   return PVR_ERROR_NO_ERROR;
 }
+
+PVR_ERROR cPVRClientMediaPortal::GetTimerTypes(PVR_TIMER_TYPE types[], int *size)
+{
+  int maxsize = *size;
+  int& count = *size;
+  count = 0;
+
+  // One-shot epg-based (maps to MediaPortal 'Once')
+  memset(&types[count], 0, sizeof(types[count]));
+  types[count].iId = count + 1;
+  PVR_STRCPY(types[count].strDescription, "MediaPortal Once");
+  types[count].iAttributes = PVR_TIMER_TYPE_SUPPORTS_ENABLE_DISABLE |
+    PVR_TIMER_TYPE_SUPPORTS_CHANNELS |
+    PVR_TIMER_TYPE_SUPPORTS_START_TIME |
+    PVR_TIMER_TYPE_SUPPORTS_END_TIME |
+    PVR_TIMER_TYPE_SUPPORTS_START_END_MARGIN |
+    PVR_TIMER_TYPE_SUPPORTS_FIRST_DAY |
+    PVR_TIMER_TYPE_SUPPORTS_PRIORITY |
+    PVR_TIMER_TYPE_SUPPORTS_LIFETIME |
+    PVR_TIMER_TYPE_SUPPORTS_RECORDING_FOLDERS;
+  count++;
+
+  // Series daily epg-based (maps to MediaPortal 'Daily')
+  memset(&types[count], 0, sizeof(types[count]));
+  types[count].iId = count + 1;
+  PVR_STRCPY(types[count].strDescription, "MediaPortal Daily");
+  types[count].iAttributes = PVR_TIMER_TYPE_IS_REPEATING | 
+    PVR_TIMER_TYPE_SUPPORTS_ENABLE_DISABLE |
+    PVR_TIMER_TYPE_SUPPORTS_CHANNELS |
+    PVR_TIMER_TYPE_SUPPORTS_START_TIME |
+    PVR_TIMER_TYPE_SUPPORTS_END_TIME |
+    PVR_TIMER_TYPE_SUPPORTS_START_END_MARGIN |
+    PVR_TIMER_TYPE_SUPPORTS_PRIORITY |
+    PVR_TIMER_TYPE_SUPPORTS_LIFETIME |
+    PVR_TIMER_TYPE_SUPPORTS_RECORDING_FOLDERS;
+  count++;
+
+  // Series weekly epg-based (maps to MediaPortal 'Weekly')
+  memset(&types[count], 0, sizeof(types[count]));
+  types[count].iId = count + 1;
+  PVR_STRCPY(types[count].strDescription, "MediaPortal Weekly");
+  types[count].iAttributes = PVR_TIMER_TYPE_IS_REPEATING |
+    PVR_TIMER_TYPE_SUPPORTS_ENABLE_DISABLE |
+    PVR_TIMER_TYPE_SUPPORTS_CHANNELS |
+    PVR_TIMER_TYPE_SUPPORTS_START_TIME |
+    PVR_TIMER_TYPE_SUPPORTS_END_TIME |
+    PVR_TIMER_TYPE_SUPPORTS_START_END_MARGIN |
+    PVR_TIMER_TYPE_SUPPORTS_FIRST_DAY |
+    PVR_TIMER_TYPE_SUPPORTS_PRIORITY |
+    PVR_TIMER_TYPE_SUPPORTS_LIFETIME |
+    PVR_TIMER_TYPE_SUPPORTS_TITLE_EPG_MATCH |
+    PVR_TIMER_TYPE_SUPPORTS_RECORDING_FOLDERS;
+  count++;
+
+  // Series weekly epg-based (maps to MediaPortal 'EveryTimeOnThisChannel')
+  memset(&types[count], 0, sizeof(types[count]));
+  types[count].iId = count + 1;
+  PVR_STRCPY(types[count].strDescription, "MediaPortal Every Time on This Channel");
+  types[count].iAttributes = PVR_TIMER_TYPE_IS_REPEATING |
+    PVR_TIMER_TYPE_SUPPORTS_ENABLE_DISABLE |
+    PVR_TIMER_TYPE_SUPPORTS_CHANNELS |
+    PVR_TIMER_TYPE_SUPPORTS_START_END_MARGIN |
+    PVR_TIMER_TYPE_SUPPORTS_PRIORITY |
+    PVR_TIMER_TYPE_SUPPORTS_LIFETIME |
+    PVR_TIMER_TYPE_SUPPORTS_TITLE_EPG_MATCH |
+    PVR_TIMER_TYPE_SUPPORTS_RECORDING_FOLDERS;
+  count++;
+
+  // Series weekly epg-based (maps to MediaPortal 'EveryTimeOnEveryChannel')
+  memset(&types[count], 0, sizeof(types[count]));
+  types[count].iId = count + 1;
+  PVR_STRCPY(types[count].strDescription, "MediaPortal Every Time on Every Channel");
+  types[count].iAttributes = PVR_TIMER_TYPE_IS_REPEATING |
+    PVR_TIMER_TYPE_SUPPORTS_ENABLE_DISABLE |
+    PVR_TIMER_TYPE_SUPPORTS_START_END_MARGIN |
+    PVR_TIMER_TYPE_SUPPORTS_PRIORITY |
+    PVR_TIMER_TYPE_SUPPORTS_LIFETIME |
+    PVR_TIMER_TYPE_SUPPORTS_TITLE_EPG_MATCH |
+    PVR_TIMER_TYPE_SUPPORTS_RECORDING_FOLDERS;
+  count++;
+
+  // Series Weekends epg-based (maps to MediaPortal 'Weekends')
+  memset(&types[count], 0, sizeof(types[count]));
+  types[count].iId = count + 1;
+  PVR_STRCPY(types[count].strDescription, "MediaPortal Weekends");
+  types[count].iAttributes = PVR_TIMER_TYPE_SUPPORTS_ENABLE_DISABLE |
+    PVR_TIMER_TYPE_SUPPORTS_CHANNELS |
+    PVR_TIMER_TYPE_SUPPORTS_START_TIME |
+    PVR_TIMER_TYPE_SUPPORTS_END_TIME |
+    PVR_TIMER_TYPE_SUPPORTS_START_END_MARGIN |
+    PVR_TIMER_TYPE_SUPPORTS_PRIORITY |
+    PVR_TIMER_TYPE_SUPPORTS_LIFETIME |
+    PVR_TIMER_TYPE_SUPPORTS_RECORDING_FOLDERS;
+  count++;
+
+  // Series Weekends epg-based (maps to MediaPortal 'WorkingDays')
+  memset(&types[count], 0, sizeof(types[count]));
+  types[count].iId = count + 1;
+  PVR_STRCPY(types[count].strDescription, "MediaPortal Working Days");
+  types[count].iAttributes = PVR_TIMER_TYPE_SUPPORTS_ENABLE_DISABLE |
+    PVR_TIMER_TYPE_SUPPORTS_CHANNELS |
+    PVR_TIMER_TYPE_SUPPORTS_START_TIME |
+    PVR_TIMER_TYPE_SUPPORTS_END_TIME |
+    PVR_TIMER_TYPE_SUPPORTS_START_END_MARGIN |
+    PVR_TIMER_TYPE_SUPPORTS_PRIORITY |
+    PVR_TIMER_TYPE_SUPPORTS_LIFETIME |
+    PVR_TIMER_TYPE_SUPPORTS_RECORDING_FOLDERS;
+  count++;
+
+  // Series weekly epg-based (maps to MediaPortal 'WeeklyEveryTimeOnThisChannel')
+  memset(&types[count], 0, sizeof(types[count]));
+  types[count].iId = count + 1;
+  PVR_STRCPY(types[count].strDescription, "MediaPortal Weekly Every Time on This Channel");
+  types[count].iAttributes = PVR_TIMER_TYPE_IS_REPEATING |
+    PVR_TIMER_TYPE_SUPPORTS_ENABLE_DISABLE |
+    PVR_TIMER_TYPE_SUPPORTS_CHANNELS |
+    PVR_TIMER_TYPE_SUPPORTS_START_END_MARGIN |
+    PVR_TIMER_TYPE_SUPPORTS_FIRST_DAY |
+    PVR_TIMER_TYPE_SUPPORTS_PRIORITY |
+    PVR_TIMER_TYPE_SUPPORTS_LIFETIME |
+    PVR_TIMER_TYPE_SUPPORTS_TITLE_EPG_MATCH |
+    PVR_TIMER_TYPE_SUPPORTS_RECORDING_FOLDERS;
+  count++;
+
+  /* Manual recordings */
+  /*********************/
+
+  // One-shot manual
+  memset(&types[count], 0, sizeof(types[count]));
+  types[count].iId = count + 1;
+  PVR_STRCPY(types[count].strDescription, "Manual");
+  types[count].iAttributes = PVR_TIMER_TYPE_IS_MANUAL |
+    PVR_TIMER_TYPE_SUPPORTS_ENABLE_DISABLE |
+    PVR_TIMER_TYPE_SUPPORTS_CHANNELS |
+    PVR_TIMER_TYPE_SUPPORTS_START_TIME |
+    PVR_TIMER_TYPE_SUPPORTS_END_TIME |
+    PVR_TIMER_TYPE_SUPPORTS_FIRST_DAY |
+    PVR_TIMER_TYPE_SUPPORTS_PRIORITY |
+    PVR_TIMER_TYPE_SUPPORTS_LIFETIME |
+    PVR_TIMER_TYPE_SUPPORTS_RECORDING_FOLDERS;
+  count++;
+
+
+  return PVR_ERROR_NO_ERROR;
+}
+
 
 PVR_ERROR cPVRClientMediaPortal::AddTimer(const PVR_TIMER &timerinfo)
 {

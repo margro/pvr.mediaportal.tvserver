@@ -29,16 +29,6 @@
 #include <string>
 #include "DateTime.h"
 
-/* VDR:
-enum eTimerFlags { tfNone      = 0x0000,
-                   tfActive    = 0x0001,
-                   tfInstant   = 0x0002,
-                   tfVps       = 0x0004,
-                   tfRecording = 0x0008,
-                   tfAll       = 0xFFFF,
-                 };
-*/
-
 namespace TvDatabase
 {
 
@@ -66,7 +56,8 @@ enum KeepMethodType
 
 };
 
-const int    cSecsInDay  = 86400;          ///> Amount of seconds in one day
+const int cSecsInDay  = 86400;          ///> Amount of seconds in one day
+const int cKodiTimerTypeOffset = 1;     ///> Offset used to map the ScheduleRecordingType onto the iTimerType values
 
 class cTimer
 {
