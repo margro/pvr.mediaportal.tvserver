@@ -34,15 +34,15 @@ namespace TvDatabase
 
 // From MediaPortal: TvDatabase.ScheduleRecordingType
 enum ScheduleRecordingType
-{
-  Once = 0,
-  Daily = 1,
-  Weekly = 2,
-  EveryTimeOnThisChannel = 3,
-  EveryTimeOnEveryChannel = 4,
-  Weekends = 5,
-  WorkingDays = 6,
-  WeeklyEveryTimeOnThisChannel = 7
+{                                  // English MediaPortal GUI description:
+  Once = 0,                        // Record once
+  Daily = 1,                       // Record every day at this time
+  Weekly = 2,                      // Record every week at this time
+  EveryTimeOnThisChannel = 3,      // Record every time on this channel
+  EveryTimeOnEveryChannel = 4,     // Record every time on every channel
+  Weekends = 5,                    // Record Weekends
+  WorkingDays = 6,                 // Record Weekdays
+  WeeklyEveryTimeOnThisChannel = 7 // Weekly on this channel
 };
 
 // From MediaPortal: TvDatabase.KeepMethodType
@@ -57,7 +57,7 @@ enum KeepMethodType
 };
 
 const int cSecsInDay  = 86400;          ///> Amount of seconds in one day
-const int cKodiTimerTypeOffset = 1;     ///> Offset used to map the ScheduleRecordingType onto the iTimerType values
+const int cKodiTimerTypeOffset = (PVR_TIMER_TYPE_NONE + 1);     ///> Offset used to map the ScheduleRecordingType onto the iTimerType values
 
 class cTimer
 {

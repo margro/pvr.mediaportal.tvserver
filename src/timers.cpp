@@ -140,8 +140,7 @@ void cTimer::GetPVRtimerinfo(PVR_TIMER &tag)
 {
   memset(&tag, 0, sizeof(tag));
 
-  /* TODO: Implement own timer types to get support for the timer features introduced with PVR API 1.9.7 */
-  tag.iTimerType = PVR_TIMER_TYPE_NONE;
+  tag.iTimerType = cKodiTimerTypeOffset + m_schedtype;
 
 #if 0 // TODO: fixme for Kodi 16.x series modifications
   if (m_progid != 0)
@@ -202,7 +201,7 @@ void cTimer::GetPVRtimerinfo(PVR_TIMER &tag)
   tag.iMarginEnd        = m_postrecordinterval;
   tag.iGenreType        = 0;
   tag.iGenreSubType     = 0;
-  PVR_STRCPY(tag.strDirectory, "Marcel");
+  PVR_STRCPY(tag.strDirectory, m_directory.c_str());
 }
 
 time_t cTimer::StartTime(void) const

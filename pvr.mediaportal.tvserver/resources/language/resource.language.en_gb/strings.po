@@ -228,10 +228,28 @@ msgid "Record Weekends"
 msgstr ""
 
 msgctxt "#30114"
-msgid "Record Week Days"
+msgid "Record Weekdays"
 msgstr ""
 
-#empty strings from id 30115 to 30119
+msgctxt "#30115"
+msgid "Record every time on this channel"
+msgstr ""
+
+msgctxt "#30116"
+msgid "Record every time on every channel"
+msgstr ""
+
+msgctxt "#30117"
+msgid "Record every week at this time"
+msgstr ""
+
+msgctxt "#30118"
+msgid "Record every day at this time"
+msgstr ""
+
+msgctxt "#30119"
+msgid "Record weekly on this channel"
+msgstr ""
 
 # Airtime:
 msgctxt "#30120"
