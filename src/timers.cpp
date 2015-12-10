@@ -158,8 +158,8 @@ void cTimer::GetPVRtimerinfo(PVR_TIMER &tag)
   else
 #endif
   {
-    tag.iClientIndex   = m_index; //Support older TVServer and Manual Schedule having a program name that does not have a match in MP EPG.
-    tag.iEpgUid        = 0;
+    tag.iClientIndex = m_index;
+    tag.iEpgUid = m_progid;
     PVR_STRCLR(tag.strDirectory);
   }
 
@@ -515,40 +515,28 @@ void cTimer::SetKeepMethod(int lifetime)
 
 int cTimer::GetLifetime(void)
 {
-  // margro: the meaning of the XBMC-PVR Lifetime field is undocumented.
-  // Assuming that VDR is the source for this field:
-  //  The guaranteed lifetime (in days) of a recording created by this
-  //  timer.  0 means that this recording may be automatically deleted
-  //  at  any  time  by a new recording with higher priority. 99 means
-  //  that this recording will never  be  automatically  deleted.  Any
-  //  number  in the range 1...98 means that this recording may not be
-  //  automatically deleted in favour of a new  recording,  until  the
-  //  given  number  of days since the start time of the recording has
-  //  passed by
+  // lifetime of recordings created by this timer.
+  // value > 0 = days after which recordings will be deleted by the backend,
+  // value < 0 addon defined integer list reference,
+  // value == 0 disabled
   switch (m_keepmethod)
   {
     case TvDatabase::UntilSpaceNeeded: //until space needed
+      return -MPTV_KEEP_UNTIL_SPACE_NEEDED;
+      break;
     case TvDatabase::UntilWatched: //until watched
-      return 0;
+      return -MPTV_KEEP_UNTIL_WATCHED;
       break;
     case TvDatabase::TillDate: //until keepdate
       {
         int diffseconds = m_keepDate - m_startTime;
         int daysremaining = (int)(diffseconds / cSecsInDay);
         // Calculate value in the range 1...98, based on m_keepdate
-        if (daysremaining < 99)
-        {
-          return daysremaining;
-        }
-        else
-        {
-          // > 98 days => return forever
-          return 99;
-        }
+        return daysremaining;
       }
       break;
     case TvDatabase::Always: //forever
-      return 99;
+      return -MPTV_KEEP_ALWAYS;
     default:
       return 0;
   }
@@ -573,3 +561,83 @@ void cTimer::SetPostRecordInterval(int minutes)
 {
   m_postrecordinterval = minutes;
 }
+
+cLifeTimeValues::cLifeTimeValues()
+{
+  /* Prepare the list with Lifetime values and descriptions */
+  // MediaPortal keep methods:
+  m_lifetimeValues.push_back(std::make_pair(MPTV_KEEP_ALWAYS, XBMC->GetLocalizedString(30133)));
+  m_lifetimeValues.push_back(std::make_pair(MPTV_KEEP_UNTIL_SPACE_NEEDED, XBMC->GetLocalizedString(30130)));
+  m_lifetimeValues.push_back(std::make_pair(MPTV_KEEP_UNTIL_WATCHED, XBMC->GetLocalizedString(30131)));
+
+  //Not directly supported by Kodi. I can add this, but there is no way to select the date
+  //m_lifetimeValues.push_back(std::make_pair(TvDatabase::TillDate, XBMC->GetLocalizedString(30132)));
+
+  // MediaPortal Until date replacements:
+  const char* strWeeks = XBMC->GetLocalizedString(30137); // %d weeks
+  const char* strMonths = XBMC->GetLocalizedString(30139); // %d months
+  const size_t cKeepStringLength = 255;
+  char strKeepString[cKeepStringLength];
+
+  m_lifetimeValues.push_back(std::make_pair(MPTV_KEEP_ONE_WEEK, XBMC->GetLocalizedString(30134)));
+
+  snprintf(strKeepString, cKeepStringLength, strWeeks, 2);
+  m_lifetimeValues.push_back(std::make_pair(MPTV_KEEP_TWO_WEEKS, strKeepString));
+
+  snprintf(strKeepString, cKeepStringLength, strWeeks, 3);
+  m_lifetimeValues.push_back(std::make_pair(MPTV_KEEP_THREE_WEEKS, strKeepString));
+
+  m_lifetimeValues.push_back(std::make_pair(MPTV_KEEP_ONE_MONTH, XBMC->GetLocalizedString(30138)));
+
+  snprintf(strKeepString, cKeepStringLength, strMonths, 2);
+  m_lifetimeValues.push_back(std::make_pair(MPTV_KEEP_TWO_MONTHS, strKeepString));
+
+  snprintf(strKeepString, cKeepStringLength, strMonths, 3);
+  m_lifetimeValues.push_back(std::make_pair(MPTV_KEEP_THREE_MONTHS, strKeepString));
+
+  snprintf(strKeepString, cKeepStringLength, strMonths, 4);
+  m_lifetimeValues.push_back(std::make_pair(MPTV_KEEP_FOUR_MONTHS, strKeepString));
+
+  snprintf(strKeepString, cKeepStringLength, strMonths, 5);
+  m_lifetimeValues.push_back(std::make_pair(MPTV_KEEP_FIVE_MONTHS, strKeepString));
+
+  snprintf(strKeepString, cKeepStringLength, strMonths, 6);
+  m_lifetimeValues.push_back(std::make_pair(MPTV_KEEP_SIX_MONTHS, strKeepString));
+
+  snprintf(strKeepString, cKeepStringLength, strMonths, 7);
+  m_lifetimeValues.push_back(std::make_pair(MPTV_KEEP_SEVEN_MONTHS, strKeepString));
+
+  snprintf(strKeepString, cKeepStringLength, strMonths, 8);
+  m_lifetimeValues.push_back(std::make_pair(MPTV_KEEP_EIGHT_MONTHS, strKeepString));
+
+  snprintf(strKeepString, cKeepStringLength, strMonths, 9);
+  m_lifetimeValues.push_back(std::make_pair(MPTV_KEEP_NINE_MONTHS, strKeepString));
+
+  snprintf(strKeepString, cKeepStringLength, strMonths, 10);
+  m_lifetimeValues.push_back(std::make_pair(MPTV_KEEP_TEN_MONTHS, strKeepString));
+
+  snprintf(strKeepString, cKeepStringLength, strMonths, 11);
+  m_lifetimeValues.push_back(std::make_pair(MPTV_KEEP_ELEVEN_MONTHS, strKeepString));
+
+  m_lifetimeValues.push_back(std::make_pair(MPTV_KEEP_ONE_YEAR, XBMC->GetLocalizedString(30140)));
+}
+
+void cLifeTimeValues::SetLifeTimeValues(PVR_TIMER_TYPE& timertype)
+{
+  timertype.iLifetimesSize = m_lifetimeValues.size();
+  timertype.iLifetimesDefault = MPTV_KEEP_ALWAYS;
+
+  int i = 0;
+  std::vector<std::pair<int, std::string>>::iterator it;
+  for (it = m_lifetimeValues.begin(); ((it != m_lifetimeValues.end()) && (i < PVR_ADDON_TIMERTYPE_VALUES_ARRAY_SIZE)); ++it, ++i)
+  {
+    timertype.lifetimes[i].iValue = it->first;
+    PVR_STRCPY(timertype.lifetimes[i].strDescription, it->second.c_str());
+  }
+}
+
+namespace Timer
+{
+  // Life time values for the recordings
+  cLifeTimeValues* lifetimeValues = NULL;
+};
