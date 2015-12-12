@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <string>
 #include "DateTime.h"
+#include "GenreTable.h"
 
 namespace TvDatabase
 {
@@ -209,6 +210,8 @@ class cTimer
     void SetPreRecordInterval(int minutes);
     void SetPostRecordInterval(int minutes);
 
+    void SetGenreTable(CGenreTable* genretable);
+
   private:
     int SchedRecType2RepeatFlags(TvDatabase::ScheduleRecordingType schedtype);
 
@@ -229,7 +232,7 @@ class cTimer
     std::string m_title;               ///> MediaPortal programName
     MPTV::CDateTime m_startTime;       ///> MediaPortal startTime
     MPTV::CDateTime m_endTime;         ///> MediaPortal endTime
-    //                                      skipped: maxAirings field
+    //                                      skipped: maxAirings field = episodes to keep
     int         m_priority;            ///> MediaPortal priority (not the XBMC one!!!)
     std::string m_directory;           ///> MediaPortal directory
     //                                      skipped:  quality field
@@ -240,7 +243,7 @@ class cTimer
     MPTV::CDateTime m_canceled;        ///> MediaPortal canceled (date + time)
     //                                      skipped: recommendedCard
     bool        m_series;              ///> MediaPortal series
-    //                                      skipped: idParentSchedule: not yet supported in XBMC
+    int         m_parentScheduleID;    ///> MediaPortal idParentSchedule
 
     // XBMC asks for these fields:
     bool        m_active;
@@ -249,6 +252,9 @@ class cTimer
     bool        m_isrecording;
 
     unsigned int m_progid;             ///> MediaPortal Program ID
+    std::string m_genre;               ///> The genre string for the program
+
+    CGenreTable* m_genretable;
 };
 
 namespace Timer

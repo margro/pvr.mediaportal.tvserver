@@ -1229,6 +1229,7 @@ PVR_ERROR cPVRClientMediaPortal::GetTimers(ADDON_HANDLE handle)
       XBMC->Log(LOG_DEBUG, "SCHEDULED: %s", data.c_str() );
 
       cTimer timer;
+      timer.SetGenreTable(m_genretable);
 
       if(timer.ParseLine(data.c_str()) == true)
       {

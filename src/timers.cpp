@@ -49,6 +49,7 @@ cTimer::cTimer() :
   m_ismanual           = false;
   m_isrecording        = false;
   m_progid             = 0;
+  m_genretable         = NULL;
 }
 
 
@@ -187,7 +188,7 @@ void cTimer::GetPVRtimerinfo(PVR_TIMER &tag)
   if(Repeat())
   {
     tag.firstDay = m_startTime.GetAsTime();
-    tag.iParentClientIndex = PVR_TIMER_NO_PARENT; //TODO: fixme...
+    tag.iParentClientIndex = (m_parentScheduleID > 0) ? m_parentScheduleID : PVR_TIMER_NO_PARENT;
   }
   else {
     tag.firstDay        = 0;
@@ -199,8 +200,15 @@ void cTimer::GetPVRtimerinfo(PVR_TIMER &tag)
   tag.iWeekdays         = RepeatFlags();
   tag.iMarginStart      = m_prerecordinterval;
   tag.iMarginEnd        = m_postrecordinterval;
-  tag.iGenreType        = 0;
-  tag.iGenreSubType     = 0;
+  if (m_genretable)
+  {
+    m_genretable->GenreToTypes(m_genre, tag.iGenreType, tag.iGenreSubType);
+  }
+  else
+  {
+    tag.iGenreType = 0;
+    tag.iGenreSubType = 0;
+  }
   PVR_STRCPY(tag.strDirectory, m_directory.c_str());
 }
 
@@ -245,6 +253,8 @@ bool cTimer::ParseLine(const char *s)
     // field 16 = series (True/False) (TVServerXBMC build >= 100)
     // field 17 = isrecording (True/False)
     // field 18 = program id (EPG)
+    // field 19 = parent schedule id (TVServerKodi build >= 130)
+    // field 20 = genre of the program (TVServerKodi build >= 130)
     m_index = atoi(schedulefields[0].c_str());
 
     if ( m_startTime.SetFromDateTime(schedulefields[1]) == false )
@@ -308,6 +318,17 @@ bool cTimer::ParseLine(const char *s)
       m_progid = atoi(schedulefields[18].c_str());
     else
       m_progid = 0;
+
+    if (schedulefields.size() >= 21)
+    {
+      m_parentScheduleID = atoi(schedulefields[19].c_str());
+      m_genre = schedulefields[20];
+    }
+    else
+    {
+      m_parentScheduleID = PVR_TIMER_NO_PARENT;
+      m_genre = "";
+    }
 
     return true;
   }
@@ -560,6 +581,11 @@ void cTimer::SetPreRecordInterval(int minutes)
 void cTimer::SetPostRecordInterval(int minutes)
 {
   m_postrecordinterval = minutes;
+}
+
+void cTimer::SetGenreTable(CGenreTable* genretable)
+{
+  m_genretable = genretable;
 }
 
 cLifeTimeValues::cLifeTimeValues()
