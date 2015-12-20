@@ -28,6 +28,7 @@ using namespace std;
 #include "timers.h"
 #include "utils.h"
 #include "DateTime.h"
+#include "epg.h"
 
 using namespace ADDON;
 using namespace MPTV;
@@ -50,30 +51,16 @@ cTimer::cTimer() :
   m_isrecording        = false;
   m_progid             = -1;
   m_genretable         = NULL;
+  m_parentScheduleID   = MPTV_NO_PARENT_SCHEDULE;
 }
 
 
 cTimer::cTimer(const PVR_TIMER& timerinfo)
 {
 
-  m_index = timerinfo.iClientIndex - 1;
-  m_progid = timerinfo.iEpgUid - 1;
-
-  if(strlen(timerinfo.strDirectory) > 0)
-  {
-    // Workaround: retrieve the schedule id from the directory name if set
-    int schedule_id = 0;
-    unsigned int program_id = 0;
-
-    if (sscanf(timerinfo.strDirectory, "%9d/%9u", &schedule_id, &program_id) == 2)
-    {
-      if (program_id == timerinfo.iClientIndex)
-      {
-        m_index  = schedule_id - 1;
-        m_progid = program_id - 1;
-      }
-    }
-  }
+  m_index = timerinfo.iClientIndex - cKodiTimerIndexOffset;
+  m_progid = timerinfo.iEpgUid - cKodiEpgIndexOffset;
+  m_parentScheduleID = timerinfo.iParentClientIndex - cKodiTimerIndexOffset;
 
   m_done = (timerinfo.state == PVR_TIMER_STATE_COMPLETED);
   m_active = (timerinfo.state == PVR_TIMER_STATE_SCHEDULED || timerinfo.state == PVR_TIMER_STATE_RECORDING);
@@ -159,8 +146,15 @@ void cTimer::GetPVRtimerinfo(PVR_TIMER &tag)
   else
 #endif
   {
-    tag.iClientIndex = m_index;
-    tag.iEpgUid = m_progid;
+    if (m_parentScheduleID != MPTV_NO_PARENT_SCHEDULE)
+    {
+      tag.iClientIndex = cKodiTimerIndexOffset + MPTV_REPEAT_NO_SERIES_OFFSET + cKodiEpgIndexOffset + m_progid;
+    }
+    else
+    {
+      tag.iClientIndex = cKodiTimerIndexOffset + m_index;
+    }
+    tag.iEpgUid = cKodiEpgIndexOffset + m_progid;
     PVR_STRCLR(tag.strDirectory);
   }
 
@@ -188,20 +182,28 @@ void cTimer::GetPVRtimerinfo(PVR_TIMER &tag)
   if(Repeat())
   {
     tag.firstDay = m_startTime.GetAsTime();
-    tag.iParentClientIndex = (m_parentScheduleID > 0) ? m_parentScheduleID : PVR_TIMER_NO_PARENT;
+    if (m_parentScheduleID != MPTV_NO_PARENT_SCHEDULE)
+    {
+      tag.iParentClientIndex = (unsigned int)(cKodiTimerIndexOffset + m_parentScheduleID);
+    }
+    else
+    {
+      tag.iParentClientIndex = PVR_TIMER_NO_PARENT;
+    }
   }
   else {
-    tag.firstDay        = 0;
+    tag.firstDay = 0;
     tag.iParentClientIndex = PVR_TIMER_NO_PARENT;
   }
   tag.iTimerType = ((int)m_schedtype) + cKodiTimerTypeOffset;
   tag.iPriority = Priority();
-  tag.iLifetime         = GetLifetime();
-  tag.iWeekdays         = RepeatFlags();
-  tag.iMarginStart      = m_prerecordinterval;
-  tag.iMarginEnd        = m_postrecordinterval;
+  tag.iLifetime = GetLifetime();
+  tag.iWeekdays = RepeatFlags();
+  tag.iMarginStart = m_prerecordinterval;
+  tag.iMarginEnd = m_postrecordinterval;
   if (m_genretable)
   {
+    // genre string to gerne type/subtype mapping
     m_genretable->GenreToTypes(m_genre, tag.iGenreType, tag.iGenreSubType);
   }
   else
@@ -326,7 +328,7 @@ bool cTimer::ParseLine(const char *s)
     }
     else
     {
-      m_parentScheduleID = PVR_TIMER_NO_PARENT;
+      m_parentScheduleID = MPTV_NO_PARENT_SCHEDULE;
       m_genre = "";
     }
 

@@ -58,7 +58,11 @@ enum KeepMethodType
 };
 
 const int cSecsInDay  = 86400;          ///> Amount of seconds in one day
-const int cKodiTimerTypeOffset = (PVR_TIMER_TYPE_NONE + 1);     ///> Offset used to map the ScheduleRecordingType onto the iTimerType values
+const int cKodiTimerTypeOffset = (PVR_TIMER_TYPE_NONE + 1);        ///> Offset used to map the ScheduleRecordingType onto the iTimerType values
+const int cKodiTimerIndexOffset = (PVR_TIMER_NO_CLIENT_INDEX + 1); ///> Offset used to map the MediaPortal schedule id's to the iClientIndex values
+
+#define MPTV_REPEAT_NO_SERIES_OFFSET 0x7FFFFFF
+#define MPTV_NO_PARENT_SCHEDULE -1
 
 // Kodi Keep methods :
 // The defines below are uses as replacement for the MediaPortal Until date version since

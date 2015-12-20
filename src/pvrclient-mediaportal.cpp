@@ -51,7 +51,7 @@ int g_iTVServerXBMCBuild = 0;
 /* TVServerXBMC plugin supported versions */
 #define TVSERVERXBMC_MIN_VERSION_STRING         "1.1.7.107"
 #define TVSERVERXBMC_MIN_VERSION_BUILD          107
-#define TVSERVERXBMC_RECOMMENDED_VERSION_STRING "1.2.3.122 till 1.10.0.127"
+#define TVSERVERXBMC_RECOMMENDED_VERSION_STRING "1.2.3.122 till 1.12.0.130"
 #define TVSERVERXBMC_RECOMMENDED_VERSION_BUILD  127
 
 /************************************************************/
@@ -1204,8 +1204,6 @@ int cPVRClientMediaPortal::GetNumTimers(void)
 
 PVR_ERROR cPVRClientMediaPortal::GetTimers(ADDON_HANDLE handle)
 {
-  /* TODO: Change implementation to get support for the timer features introduced with PVR API 1.9.7 */
-
   vector<string>  lines;
   string          result;
   PVR_TIMER       tag;
@@ -1213,7 +1211,7 @@ PVR_ERROR cPVRClientMediaPortal::GetTimers(ADDON_HANDLE handle)
   if (!IsUp())
     return PVR_ERROR_SERVER_ERROR;
 
-  result = SendCommand("ListSchedules:\n");
+  result = SendCommand("ListSchedules:True\n");
 
   if (result.length() > 0)
   {
