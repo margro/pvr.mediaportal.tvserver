@@ -60,10 +60,17 @@ cTimer::cTimer(const PVR_TIMER& timerinfo)
 
   m_index = timerinfo.iClientIndex - cKodiTimerIndexOffset;
   m_progid = timerinfo.iEpgUid - cKodiEpgIndexOffset;
+
   m_parentScheduleID = timerinfo.iParentClientIndex - cKodiTimerIndexOffset;
 
+  if (m_index >= MPTV_REPEAT_NO_SERIES_OFFSET)
+  {
+    m_index = m_parentScheduleID;
+  }
+
   m_done = (timerinfo.state == PVR_TIMER_STATE_COMPLETED);
-  m_active = (timerinfo.state == PVR_TIMER_STATE_SCHEDULED || timerinfo.state == PVR_TIMER_STATE_RECORDING);
+  m_active = (timerinfo.state == PVR_TIMER_STATE_SCHEDULED || timerinfo.state == PVR_TIMER_STATE_RECORDING
+    || PVR_TIMER_STATE_CONFLICT_OK || PVR_TIMER_STATE_CONFLICT_NOK);
 
   if (!m_active)
   {
@@ -100,8 +107,11 @@ cTimer::cTimer(const PVR_TIMER& timerinfo)
 
   SetKeepMethod(timerinfo.iLifetime);
 
-  if(timerinfo.iWeekdays != PVR_WEEKDAY_NONE) // repeating?
+  m_schedtype = static_cast<enum TvDatabase::ScheduleRecordingType>(timerinfo.iTimerType - cKodiTimerTypeOffset);
+
+  if ((m_schedtype == TvDatabase::Once) && (timerinfo.iWeekdays != PVR_WEEKDAY_NONE)) // huh, still repeating?
   {
+    // Select the correct schedule type
     m_schedtype = RepeatFlags2SchedRecType(timerinfo.iWeekdays);
     m_series = true;
   }
@@ -128,35 +138,20 @@ void cTimer::GetPVRtimerinfo(PVR_TIMER &tag)
 {
   memset(&tag, 0, sizeof(tag));
 
-  tag.iTimerType = cKodiTimerTypeOffset + m_schedtype;
-
-#if 0 // TODO: fixme for Kodi 16.x series modifications
-  if (m_progid != 0)
+  if (m_parentScheduleID != MPTV_NO_PARENT_SCHEDULE)
   {
-    // Use the EPG (program) id as unique id to see all scheduled programs in the EPG and timer list
-    // Next program (In Home) is always the right one. Mostly seen with programs that are shown daily.
-    tag.iClientIndex    = m_progid + 1;
-    tag.iEpgUid         = m_index + 1;
-
-    // Workaround: store the schedule and program id as directory name
-    // This is needed by the PVR addon to map an XBMC timer back to the MediaPortal schedule
-    // because we can't use the iClientIndex as schedule id anymore...
-    snprintf(tag.strDirectory, sizeof(tag.strDirectory)-1, "%d/%d", m_index + 1, m_progid + 1);
+    /* Hack: use a different client index for Kodi since it does not accept multiple times the same schedule id
+     * This means that all programs scheduled via a series schedule in MediaPortal will get a different client
+     * index in Kodi. The iParentClientIndex will still point to the original id_Schedule in MediaPortal
+     */
+    tag.iClientIndex = cKodiTimerIndexOffset + MPTV_REPEAT_NO_SERIES_OFFSET + cKodiEpgIndexOffset + m_progid;
   }
   else
-#endif
   {
-    if (m_parentScheduleID != MPTV_NO_PARENT_SCHEDULE)
-    {
-      tag.iClientIndex = cKodiTimerIndexOffset + MPTV_REPEAT_NO_SERIES_OFFSET + cKodiEpgIndexOffset + m_progid;
-    }
-    else
-    {
-      tag.iClientIndex = cKodiTimerIndexOffset + m_index;
-    }
-    tag.iEpgUid = cKodiEpgIndexOffset + m_progid;
-    PVR_STRCLR(tag.strDirectory);
+    tag.iClientIndex = cKodiTimerIndexOffset + m_index;
   }
+  tag.iEpgUid = cKodiEpgIndexOffset + m_progid;
+  PVR_STRCLR(tag.strDirectory);
 
   if (IsRecording())
     tag.state           = PVR_TIMER_STATE_RECORDING;
@@ -181,24 +176,30 @@ void cTimer::GetPVRtimerinfo(PVR_TIMER &tag)
   //           (only available for repeating timers).
   if(Repeat())
   {
-    tag.firstDay = m_startTime.GetAsTime();
     if (m_parentScheduleID != MPTV_NO_PARENT_SCHEDULE)
     {
+      tag.firstDay = 0;
       tag.iParentClientIndex = (unsigned int)(cKodiTimerIndexOffset + m_parentScheduleID);
+      tag.iWeekdays = PVR_WEEKDAY_NONE;
+      tag.iTimerType = cKodiTimerTypeOffset + (int) TvDatabase::Once;
     }
     else
     {
+      tag.firstDay = m_startTime.GetAsTime();
       tag.iParentClientIndex = PVR_TIMER_NO_PARENT;
+      tag.iWeekdays = RepeatFlags();
+      tag.iTimerType = cKodiTimerTypeOffset + (int) m_schedtype;
     }
   }
-  else {
+  else
+  {
     tag.firstDay = 0;
     tag.iParentClientIndex = PVR_TIMER_NO_PARENT;
+    tag.iWeekdays = RepeatFlags();
+    tag.iTimerType = cKodiTimerTypeOffset + (int) m_schedtype;
   }
-  tag.iTimerType = ((int)m_schedtype) + cKodiTimerTypeOffset;
   tag.iPriority = Priority();
   tag.iLifetime = GetLifetime();
-  tag.iWeekdays = RepeatFlags();
   tag.iMarginStart = m_prerecordinterval;
   tag.iMarginEnd = m_postrecordinterval;
   if (m_genretable)
@@ -594,9 +595,9 @@ cLifeTimeValues::cLifeTimeValues()
 {
   /* Prepare the list with Lifetime values and descriptions */
   // MediaPortal keep methods:
-  m_lifetimeValues.push_back(std::make_pair(MPTV_KEEP_ALWAYS, XBMC->GetLocalizedString(30133)));
-  m_lifetimeValues.push_back(std::make_pair(MPTV_KEEP_UNTIL_SPACE_NEEDED, XBMC->GetLocalizedString(30130)));
-  m_lifetimeValues.push_back(std::make_pair(MPTV_KEEP_UNTIL_WATCHED, XBMC->GetLocalizedString(30131)));
+  m_lifetimeValues.push_back(std::make_pair(-MPTV_KEEP_ALWAYS, XBMC->GetLocalizedString(30133)));
+  m_lifetimeValues.push_back(std::make_pair(-MPTV_KEEP_UNTIL_SPACE_NEEDED, XBMC->GetLocalizedString(30130)));
+  m_lifetimeValues.push_back(std::make_pair(-MPTV_KEEP_UNTIL_WATCHED, XBMC->GetLocalizedString(30131)));
 
   //Not directly supported by Kodi. I can add this, but there is no way to select the date
   //m_lifetimeValues.push_back(std::make_pair(TvDatabase::TillDate, XBMC->GetLocalizedString(30132)));
