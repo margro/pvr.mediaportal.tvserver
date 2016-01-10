@@ -182,6 +182,7 @@ void cTimer::GetPVRtimerinfo(PVR_TIMER &tag)
       tag.iParentClientIndex = (unsigned int)(cKodiTimerIndexOffset + m_parentScheduleID);
       tag.iWeekdays = PVR_WEEKDAY_NONE;
       tag.iTimerType = cKodiTimerTypeOffset + (int) TvDatabase::Once;
+      tag.iClientChannelUid = m_channel;
     }
     else
     {
