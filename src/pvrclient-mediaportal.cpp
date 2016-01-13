@@ -1440,6 +1440,17 @@ PVR_ERROR cPVRClientMediaPortal::DeleteTimer(const PVR_TIMER &timer, bool UNUSED
   if (!IsUp())
     return PVR_ERROR_SERVER_ERROR;
 
+  // Check if this timer has a parent schedule and a program id
+  // When true, it has no real schedule at the Mediaportal side.
+  // The best we can do in that case is disable the timer for this program only
+  if ((timer.iParentClientIndex > 0) && (timer.iEpgUid > 0))
+  {
+    // Don't delete this timer, but disable it only
+    PVR_TIMER disableMe = timer;
+    disableMe.state = PVR_TIMER_STATE_DISABLED;
+    return UpdateTimer(disableMe);
+  }
+
   cTimer mepotimer(timer);
 
   snprintf(command, 256, "DeleteSchedule:%i\n", mepotimer.Index());
