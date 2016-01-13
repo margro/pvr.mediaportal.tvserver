@@ -113,13 +113,9 @@ cTimer::cTimer(const PVR_TIMER& timerinfo)
   {
     // Select the correct schedule type
     m_schedtype = RepeatFlags2SchedRecType(timerinfo.iWeekdays);
-    m_series = true;
   }
-  else
-  {
-    m_schedtype = TvDatabase::Once;
-    m_series = false;
-  }
+
+  m_series = (m_schedtype == TvDatabase::Once) ? false : true;
 
   m_prerecordinterval = timerinfo.iMarginStart;
   m_postrecordinterval = timerinfo.iMarginEnd;
