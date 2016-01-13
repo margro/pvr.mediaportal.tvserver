@@ -70,17 +70,17 @@ cTimer::cTimer(const PVR_TIMER& timerinfo)
 
   m_done = (timerinfo.state == PVR_TIMER_STATE_COMPLETED);
   m_active = (timerinfo.state == PVR_TIMER_STATE_SCHEDULED || timerinfo.state == PVR_TIMER_STATE_RECORDING
-    || PVR_TIMER_STATE_CONFLICT_OK || PVR_TIMER_STATE_CONFLICT_NOK);
+    || timerinfo.state == PVR_TIMER_STATE_CONFLICT_OK || timerinfo.state == PVR_TIMER_STATE_CONFLICT_NOK);
 
   if (!m_active)
-  {
-    m_canceled = CDateTime::Now();
-  }
-  else
   {
     // Don't know when it was cancelled, so assume that it was canceled now...
     // backend (TVServerXBMC) will only update the canceled date time when
     // this schedule was just canceled
+    m_canceled = CDateTime::Now();
+  }
+  else
+  {
     m_canceled = cUndefinedDate;
   }
  
@@ -510,27 +510,23 @@ int cTimer::Mepo2XBMCPriority(int UNUSED(mepoprio))
 
 
 /*
- * @brief Convert a XBMC Lifetime value to MediaPortals keepMethod+keepDate settings
- * @param lifetime the XBMC lifetime value (in days) (following the VDR syntax)
+ * @brief Convert a Kodi Lifetime value to MediaPortals keepMethod+keepDate settings
+ * @param lifetime the Kodi lifetime value (in days)
  * Should be called after setting m_starttime !!
  */
 void cTimer::SetKeepMethod(int lifetime)
 {
-  // XBMC follows the VDR definition of lifetime
-  // XBMC: 0 means that this recording may be automatically deleted
-  //         at  any  time  by a new recording with higher priority
-  //    1-98 means that this recording may not be automatically deleted
-  //         in favour of a new recording, until the given number of days
-  //         since the start time of the recording has passed by
-  //      99 means that this recording will never be automatically deleted
+  // Kodi keep methods:
+  // negative values: => special methods like Until Space Needed, Always, Until Watched
+  // positive values: days to keep the recording
   if (lifetime == 0)
   {
     m_keepmethod = TvDatabase::UntilSpaceNeeded;
     m_keepDate = cUndefinedDate;
   }
-  else if (lifetime == 99)
+  else if (lifetime < 0)
   {
-    m_keepmethod = TvDatabase::Always;
+    m_keepmethod = (TvDatabase::KeepMethodType) -lifetime;
     m_keepDate = cUndefinedDate;
   }
   else
@@ -658,7 +654,7 @@ cLifeTimeValues::cLifeTimeValues()
 void cLifeTimeValues::SetLifeTimeValues(PVR_TIMER_TYPE& timertype)
 {
   timertype.iLifetimesSize = m_lifetimeValues.size();
-  timertype.iLifetimesDefault = MPTV_KEEP_ALWAYS;
+  timertype.iLifetimesDefault = -MPTV_KEEP_ALWAYS; //Negative = special types, positive values is days
 
   int i = 0;
   std::vector<std::pair<int, std::string>>::iterator it;
