@@ -39,6 +39,7 @@
 #include "MemoryBuffer.h"
 #endif
 #include "FileUtils.h"
+#include "DateTime.h"
 
 using namespace std;
 using namespace ADDON;
@@ -58,6 +59,8 @@ namespace MPTV
         m_lastPause = 0;
         m_WaitForSeekToEof = 0;
         m_bRecording = false;
+        m_bufferTimeStart = 0;
+        m_pausedTime = 0;
 
 #ifdef LIVE555
         m_rtspClient      = NULL;
@@ -198,6 +201,10 @@ namespace MPTV
         if (m_State != State_Stopped)
             Close();
 
+        m_bufferTimeStart = 0;
+        m_pausedTime = 0;
+        m_lastPause = 0;
+
         // check file type
         int length = m_fileName.length();
 
@@ -280,6 +287,8 @@ namespace MPTV
             m_fileReader->SetFilePointer(0LL, FILE_BEGIN);
             m_State = State_Running;
         }
+        m_bufferTimeStart = NowInUTC();
+
         return S_OK;
     }
 
@@ -314,6 +323,9 @@ namespace MPTV
             }
             SAFE_DELETE(m_fileReader);
             m_State = State_Stopped;
+            m_bufferTimeStart = 0;
+            m_pausedTime = 0;
+            m_lastPause = 0;
         }
     }
 
@@ -401,7 +413,7 @@ namespace MPTV
 
     bool CTsReader::IsTimeShifting()
     {
-        return m_bTimeShifting;
+      return m_bTimeShifting;
     }
 
     long CTsReader::Pause()
@@ -410,7 +422,7 @@ namespace MPTV
 
         if (m_State == State_Running)
         {
-            m_lastPause = GetTickCount();
+            m_lastPause = NowInUTC();
 #ifdef LIVE555
             // Are we using rtsp?
             if (m_bIsRTSP)
@@ -431,8 +443,9 @@ namespace MPTV
                 m_rtspClient->Continue();
                 XBMC->Log(LOG_DEBUG, "CTsReader::Pause() rtsp running"); // at position: %f", (m_seekTime.Millisecs() / 1000.0f));
             }
-            m_State = State_Running;
 #endif //LIVE555
+            m_State = State_Running;
+            m_pausedTime = NowInUTC() - m_lastPause;
         }
 
         XBMC->Log(LOG_DEBUG, "TsReader: Pause - END - state = %d", m_State);
@@ -457,5 +470,41 @@ namespace MPTV
     int64_t CTsReader::SetFilePointer(int64_t llDistanceToMove, unsigned long dwMoveMethod)
     {
         return m_fileReader->SetFilePointer(llDistanceToMove, dwMoveMethod);
+    }
+
+    time_t CTsReader::GetBufferTimeStart(void)
+    {
+      return m_bufferTimeStart;
+    }
+
+    time_t CTsReader::GetBufferTimeEnd(void)
+    {
+      if (m_State != State_Stopped)
+        return NowInUTC();
+      else
+        return 0;
+    }
+
+    time_t CTsReader::GetPlayingTime(void)
+    {
+      if (m_State == State_Paused)
+        return m_lastPause;
+      else
+        return (GetBufferTimeEnd() - m_pausedTime);
+      return 0;
+    }
+
+    time_t CTsReader::NowInUTC()
+    {
+      time_t rawtime;
+      struct tm * ptm;
+
+      time(&rawtime);
+
+      ptm = gmtime(&rawtime);
+
+      time_t nowInUTC = mktime(ptm);
+
+      return nowInUTC;
     }
 }

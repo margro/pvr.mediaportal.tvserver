@@ -76,6 +76,10 @@ namespace MPTV
         bool IsSeeking();
         long Pause();
 
+        time_t GetBufferTimeStart(void);
+        time_t GetBufferTimeEnd(void);
+        time_t GetPlayingTime(void);
+
         TsReaderState State() { return m_State; };
 
     private:
@@ -85,6 +89,12 @@ namespace MPTV
          * \param The original (local) timeshift buffer file path on the TV server side
          */
         std::string TranslatePath(const char* pszFileName);
+
+        /**
+         * \brief Returns the current time un UTC /
+         * \return time_t value (number of seconds since 00:00 hours, Jan 1, 1970 UTC)
+         */
+        time_t NowInUTC();
 
         bool            m_bTimeShifting;
         bool            m_bRecording;
@@ -102,7 +112,9 @@ namespace MPTV
         int             m_cardId;           ///< Card id for the current Card used for this timeshift buffer
         std::string     m_basePath;         ///< The base path shared by all timeshift buffers (to be determined from the Card settings)
         TsReaderState   m_State;            ///< The current state of the TsReader
-        unsigned long   m_lastPause;        ///< Last time instance at which the playback was paused
+        time_t          m_lastPause;        ///< Last time instance at which the playback was paused
         int             m_WaitForSeekToEof;
+        time_t          m_bufferTimeStart;
+        time_t          m_pausedTime;
     };
 }

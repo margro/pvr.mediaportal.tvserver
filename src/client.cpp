@@ -916,6 +916,38 @@ bool CanSeekStream(void)
   return false;
 }
 
+time_t GetPlayingTime()
+{
+  if (g_client)
+    return g_client->GetPlayingTime();
+  else
+    return 0;
+}
+
+time_t GetBufferTimeStart()
+{
+  if (g_client)
+    return g_client->GetBufferTimeStart();
+  else
+    return 0;
+}
+
+time_t GetBufferTimeEnd()
+{
+  if (g_client)
+    return g_client->GetBufferTimeEnd();
+  else
+    return 0;
+}
+
+bool IsTimeshifting(void)
+{
+  if (g_client)
+    return g_client->IsTimeshifting();
+  else
+    return false;
+}
+
 /** UNUSED API FUNCTIONS */
 PVR_ERROR MoveChannel(const PVR_CHANNEL& UNUSED(channel)) { return PVR_ERROR_NOT_IMPLEMENTED; }
 DemuxPacket* DemuxRead(void) { return NULL; }
@@ -927,10 +959,7 @@ PVR_ERROR GetRecordingEdl(const PVR_RECORDING&, PVR_EDL_ENTRY[], int*) { return 
 unsigned int GetChannelSwitchDelay(void) { return 0; }
 bool SeekTime(int,bool,double*) { return false; }
 void SetSpeed(int) {};
-time_t GetPlayingTime() { return 0; }
-time_t GetBufferTimeStart() { return 0; }
-time_t GetBufferTimeEnd() { return 0; }
-bool IsTimeshifting(void) { return false; }
+
 PVR_ERROR UndeleteRecording(const PVR_RECORDING& recording) { return PVR_ERROR_NOT_IMPLEMENTED; }
 PVR_ERROR DeleteAllRecordingsFromTrash() { return PVR_ERROR_NOT_IMPLEMENTED; }
 PVR_ERROR SetEPGTimeFrame(int) { return PVR_ERROR_NOT_IMPLEMENTED; }

@@ -100,6 +100,10 @@ public:
   bool CanPauseAndSeek(void);
   void PauseStream(bool bPaused);
   bool IsRealTimeStream(void);
+  bool IsTimeshifting(void);
+  time_t GetBufferTimeStart(void);
+  time_t GetBufferTimeEnd(void);
+  time_t GetPlayingTime(void);
 
   /* Record stream handling */
   bool OpenRecordedStream(const PVR_RECORDING &recording);

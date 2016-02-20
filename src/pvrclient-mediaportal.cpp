@@ -1877,6 +1877,38 @@ bool cPVRClientMediaPortal::IsRealTimeStream(void)
   return m_bTimeShiftStarted;
 }
 
+bool cPVRClientMediaPortal::IsTimeshifting(void)
+{
+  if (m_tsreader && m_bTimeShiftStarted)
+    return true;
+  else
+    return false;
+}
+
+time_t cPVRClientMediaPortal::GetPlayingTime(void)
+{
+  if (m_tsreader)
+    return m_tsreader->GetPlayingTime();
+  else
+    return 0;
+}
+
+time_t cPVRClientMediaPortal::GetBufferTimeStart(void)
+{
+  if (m_tsreader)
+    return m_tsreader->GetBufferTimeStart();
+  else
+    return 0;
+}
+
+time_t cPVRClientMediaPortal::GetBufferTimeEnd(void)
+{
+  if (m_tsreader)
+    return m_tsreader->GetBufferTimeEnd();
+  else
+    return 0;
+}
+
 bool cPVRClientMediaPortal::SwitchChannel(const PVR_CHANNEL &channel)
 {
   if (((int)channel.iUniqueId) == m_iCurrentChannel)
