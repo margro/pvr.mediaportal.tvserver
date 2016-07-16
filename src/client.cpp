@@ -813,12 +813,12 @@ long long LengthLiveStream(void)
     return g_client->LengthLiveStream();
 }
 
-int GetCurrentClientChannel()
+bool IsRealTimeStream(void)
 {
-  if (!g_client)
-    return 0;
-  else
-    return g_client->GetCurrentClientChannel();
+  if (g_client == NULL)
+    return false;
+
+  return g_client->IsRealTimeStream();
 }
 
 bool SwitchChannel(const PVR_CHANNEL &channelinfo)
@@ -933,4 +933,5 @@ time_t GetBufferTimeEnd() { return 0; }
 bool IsTimeshifting(void) { return false; }
 PVR_ERROR UndeleteRecording(const PVR_RECORDING& recording) { return PVR_ERROR_NOT_IMPLEMENTED; }
 PVR_ERROR DeleteAllRecordingsFromTrash() { return PVR_ERROR_NOT_IMPLEMENTED; }
+PVR_ERROR SetEPGTimeFrame(int) { return PVR_ERROR_NOT_IMPLEMENTED; }
 } //end extern "C"

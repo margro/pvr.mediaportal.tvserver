@@ -19,7 +19,7 @@
 #include "kodi/libXBMC_addon.h"
 #include "utils.h"
 #include <string>
-#include "platform/os.h"
+#include "p8-platform/os.h"
 #include "client.h"
 #include "Socket.h"
 
@@ -449,6 +449,9 @@ bool Socket::reconnect()
   }
 
   if( !create() )
+    return false;
+
+  if (_sd == INVALID_SOCKET)
     return false;
 
   int status = ::connect ( _sd, reinterpret_cast<sockaddr*>(&_sockaddr), sizeof ( _sockaddr ) );

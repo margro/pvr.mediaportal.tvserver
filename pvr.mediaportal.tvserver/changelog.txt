@@ -1,3 +1,36 @@
+v2.1.1
+- Timers: reduce the amount of magic numbers (PVR API 5.0.0)
+- Recordings: implement the new iChannelUid field (PVR API 5.0.0)
+
+v2.1.0
+- Updated to PVR addon API v5.0.0
+
+v2.0.4
+- Timer: fixed: 'unable to resolve timer type' warnings (Kodi expects a manual, no EPG timer type)
+- Timer: fixed: timer disabled state (PVR_TIMER_STATE_CANCELLED should now be PVR_TIMER_STATE_DISABLED)
+- Timer: fixed: don't show the unsupported 'folder' field
+
+v2.0.3
+- Coverity fixes
+
+v2.0.2
+- Updated to PVR API v4.2.0
+
+v2.0.1
+- Updated language files from Transifex
+
+v2.0.0
+- Initial Kodi Krypton version.
+
+v1.12.0
+- Timer: Add series recording timer types support
+- Timer: Add an backward compatibility option to re-enable the pre-Jarvis series recording dialog
+- Timer: show EPG description
+- Recordings: pass recording series and episode numbers to Kodi
+
+v1.11.12
+- Updated language files from Transifex
+
 v1.11.11
 - Compile fix for gcc 5
 - Remove the "unstable" notice from the disclaimer

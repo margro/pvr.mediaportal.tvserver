@@ -21,7 +21,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "platform/util/timeutils.h"
+#include "p8-platform/util/timeutils.h"
 
 #include "client.h"
 #include "timers.h"
@@ -86,7 +86,7 @@ cPVRClientMediaPortal::~cPVRClientMediaPortal()
 
 string cPVRClientMediaPortal::SendCommand(string command)
 {
-  PLATFORM::CLockObject critsec(m_mutex);
+  P8PLATFORM::CLockObject critsec(m_mutex);
 
   if ( !m_tcpclient->send(command) )
   {
@@ -121,7 +121,7 @@ string cPVRClientMediaPortal::SendCommand(string command)
 
 bool cPVRClientMediaPortal::SendCommand2(string command, vector<string>& lines)
 {
-  PLATFORM::CLockObject critsec(m_mutex);
+  P8PLATFORM::CLockObject critsec(m_mutex);
 
   if ( !m_tcpclient->send(command) )
   {
@@ -973,6 +973,7 @@ PVR_ERROR cPVRClientMediaPortal::GetRecordings(ADDON_HANDLE handle)
       PVR_STRCPY(tag.strPlotOutline, recording.EpisodeName());
       PVR_STRCPY(tag.strPlot, recording.Description());
       PVR_STRCPY(tag.strChannelName, recording.ChannelName());
+      tag.iChannelUid    = recording.ChannelID();
       tag.recordingTime  = recording.StartTime();
       tag.iDuration      = (int) recording.Duration();
       tag.iPriority      = 0; // only available for schedules, not for recordings
@@ -983,6 +984,7 @@ PVR_ERROR cPVRClientMediaPortal::GetRecordings(ADDON_HANDLE handle)
       tag.iLastPlayedPosition = recording.LastPlayedPosition();
       tag.iEpisodeNumber = recording.GetEpisodeNumber();
       tag.iSeriesNumber  = recording.GetSeriesNumber();
+      tag.iEpgEventId    = EPG_TAG_INVALID_UID;
 
       strDirectory = recording.Directory();
       if (strDirectory.length() > 0)
@@ -1039,11 +1041,12 @@ PVR_ERROR cPVRClientMediaPortal::GetRecordings(ADDON_HANDLE handle)
         // Use rtsp url and XBMC's internal FFMPeg playback
         PVR_STRCPY(tag.strStreamURL, recording.Stream());
       }
+
       PVR->TransferRecordingEntry(handle, &tag);
     }
   }
 
-  m_iLastRecordingUpdate = PLATFORM::GetTimeMs();
+  m_iLastRecordingUpdate = P8PLATFORM::GetTimeMs();
 
   return PVR_ERROR_NO_ERROR;
 }
@@ -1235,7 +1238,7 @@ PVR_ERROR cPVRClientMediaPortal::GetTimers(ADDON_HANDLE handle)
     }
   }
 
-  if ( PLATFORM::GetTimeMs() >  m_iLastRecordingUpdate + 15000)
+  if ( P8PLATFORM::GetTimeMs() >  m_iLastRecordingUpdate + 15000)
   {
     PVR->TriggerRecordingUpdate();
   }
@@ -1366,6 +1369,17 @@ PVR_ERROR cPVRClientMediaPortal::GetTimerTypes(PVR_TIMER_TYPE types[], int *size
   types[count].iId = cKodiTimerTypeOffset + TvDatabase::WeeklyEveryTimeOnThisChannel;
   types[count].iAttributes = MPTV_RECORD_WEEKLY_EVERY_TIME_ON_THIS_CHANNEL;
   PVR_STRCPY(types[count].strDescription, XBMC->GetLocalizedString(30119)); /* Weekly on this channel */
+  Timer::lifetimeValues->SetLifeTimeValues(types[count]);
+  count++;
+
+  if (count > maxsize)
+	  return PVR_ERROR_NO_ERROR;
+
+  /* Kodi specific 'Manual' schedule type */
+  memset(&types[count], 0, sizeof(types[count]));
+  types[count].iId = cKodiTimerTypeOffset + TvDatabase::KodiManual;
+  types[count].iAttributes = MPTV_RECORD_MANUAL;
+  PVR_STRCPY(types[count].strDescription, XBMC->GetLocalizedString(30122)); /* Manual */
   Timer::lifetimeValues->SetLifeTimeValues(types[count]);
   count++;
 
@@ -1529,6 +1543,7 @@ bool cPVRClientMediaPortal::OpenLiveStream(const PVR_CHANNEL &channelinfo)
   if (!IsUp())
   {
     m_iCurrentChannel = -1;
+    m_bTimeShiftStarted = false;
     m_signalStateCounter = 0;
     XBMC->Log(LOG_ERROR, "Open Live stream failed. No connection to backend.");
     return false;
@@ -1542,6 +1557,7 @@ bool cPVRClientMediaPortal::OpenLiveStream(const PVR_CHANNEL &channelinfo)
 
   m_iCurrentChannel = -1; // make sure that it is not a valid channel nr in case it will fail lateron
   m_signalStateCounter = 0;
+  m_bTimeShiftStarted = false;
 
   // Start the timeshift
   // Use the optimized TimeshiftChannel call (don't stop a running timeshift)
@@ -1800,7 +1816,7 @@ void cPVRClientMediaPortal::CloseLiveStream(void)
   string result;
 
   if (!IsUp())
-     return;
+    return;
 
   if (m_bTimeShiftStarted)
   {
@@ -1856,6 +1872,11 @@ long long cPVRClientMediaPortal::PositionLiveStream(void)
   return m_tsreader->GetFilePointer();
 }
 
+bool cPVRClientMediaPortal::IsRealTimeStream(void)
+{
+  return m_bTimeShiftStarted;
+}
+
 bool cPVRClientMediaPortal::SwitchChannel(const PVR_CHANNEL &channel)
 {
   if (((int)channel.iUniqueId) == m_iCurrentChannel)
@@ -1882,12 +1903,6 @@ bool cPVRClientMediaPortal::SwitchChannel(const PVR_CHANNEL &channel)
   }
 }
 
-
-int cPVRClientMediaPortal::GetCurrentClientChannel()
-{
-  XBMC->Log(LOG_DEBUG, "GetCurrentClientChannel: uid=%i", m_iCurrentChannel);
-  return m_iCurrentChannel;
-}
 
 PVR_ERROR cPVRClientMediaPortal::SignalStatus(PVR_SIGNAL_STATUS &signalStatus)
 {
@@ -1954,6 +1969,9 @@ PVR_ERROR cPVRClientMediaPortal::SignalStatus(PVR_SIGNAL_STATUS &signalStatus)
 bool cPVRClientMediaPortal::OpenRecordedStream(const PVR_RECORDING &recording)
 {
   XBMC->Log(LOG_NOTICE, "OpenRecordedStream (id=%s)", recording.strRecordingId);
+
+  m_bTimeShiftStarted = false;
+
   if (!IsUp())
     return false;
 

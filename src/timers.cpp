@@ -23,7 +23,7 @@
 
 using namespace std;
 
-#include "platform/os.h" //needed for snprintf
+#include "p8-platform/os.h" //needed for snprintf
 #include "client.h"
 #include "timers.h"
 #include "utils.h"
@@ -37,9 +37,9 @@ cTimer::cTimer() :
   m_keepDate(cUndefinedDate),
   m_canceled(cUndefinedDate)
 {
-  m_index              = -1;
+  m_index              = PVR_TIMER_NO_CLIENT_INDEX;
   m_active             = true;
-  m_channel            = 0;
+  m_channel            = PVR_CHANNEL_INVALID_UID;
   m_schedtype          = TvDatabase::Once;
   m_priority           = 0;
   m_keepmethod         = TvDatabase::UntilSpaceNeeded;
@@ -49,13 +49,14 @@ cTimer::cTimer() :
   m_done               = false;
   m_ismanual           = false;
   m_isrecording        = false;
-  m_progid             = -1;
+  m_progid             = (EPG_TAG_INVALID_UID - cKodiEpgIndexOffset);
   m_genretable         = NULL;
   m_parentScheduleID   = MPTV_NO_PARENT_SCHEDULE;
 }
 
 
-cTimer::cTimer(const PVR_TIMER& timerinfo)
+cTimer::cTimer(const PVR_TIMER& timerinfo):
+  m_genretable(NULL)
 {
 
   m_index = timerinfo.iClientIndex - cKodiTimerIndexOffset;
@@ -108,6 +109,10 @@ cTimer::cTimer(const PVR_TIMER& timerinfo)
   SetKeepMethod(timerinfo.iLifetime);
 
   m_schedtype = static_cast<enum TvDatabase::ScheduleRecordingType>(timerinfo.iTimerType - cKodiTimerTypeOffset);
+  if (m_schedtype == TvDatabase::KodiManual)
+  {
+    m_schedtype = TvDatabase::Once;
+  }
 
   if ((m_schedtype == TvDatabase::Once) && (timerinfo.iWeekdays != PVR_WEEKDAY_NONE)) // huh, still repeating?
   {
@@ -153,7 +158,7 @@ void cTimer::GetPVRtimerinfo(PVR_TIMER &tag)
   else if (m_active)
     tag.state           = PVR_TIMER_STATE_SCHEDULED;
   else
-    tag.state           = PVR_TIMER_STATE_CANCELLED;
+    tag.state           = PVR_TIMER_STATE_DISABLED;
 
   if (m_schedtype == TvDatabase::EveryTimeOnEveryChannel)
   {
@@ -200,8 +205,12 @@ void cTimer::GetPVRtimerinfo(PVR_TIMER &tag)
   tag.iMarginEnd = m_postrecordinterval;
   if (m_genretable)
   {
-    // genre string to gerne type/subtype mapping
-    m_genretable->GenreToTypes(m_genre, tag.iGenreType, tag.iGenreSubType);
+    // genre string to genre type/subtype mapping
+    int genreType;
+    int genreSubType;
+    m_genretable->GenreToTypes(m_genre, genreType, genreSubType);
+    tag.iGenreType = genreType;
+    tag.iGenreSubType = genreSubType;
   }
   else
   {
@@ -318,7 +327,7 @@ bool cTimer::ParseLine(const char *s)
     if(schedulefields.size() >= 19)
       m_progid = atoi(schedulefields[18].c_str());
     else
-      m_progid = 0;
+      m_progid = (EPG_TAG_INVALID_UID - cKodiEpgIndexOffset);
 
     if (schedulefields.size() >= 22)
     {
@@ -352,6 +361,7 @@ int cTimer::SchedRecType2RepeatFlags(TvDatabase::ScheduleRecordingType schedtype
   switch (schedtype)
   {
     case TvDatabase::Once:
+    case TvDatabase::KodiManual:
       weekdays = PVR_WEEKDAY_NONE;
       break;
     case TvDatabase::Daily:

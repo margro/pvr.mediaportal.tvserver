@@ -27,7 +27,7 @@
 #include "Socket.h"
 #include "Cards.h"
 #include "epg.h"
-#include "platform/threads/mutex.h"
+#include "p8-platform/threads/mutex.h"
 
 /* Use a forward declaration here. Including RTSPClient.h via TSReader.h at this point gives compile errors */
 namespace MPTV
@@ -35,7 +35,7 @@ namespace MPTV
     class CTsReader;
 }
 
-class cPVRClientMediaPortal: public PLATFORM::PreventCopy
+class cPVRClientMediaPortal: public P8PLATFORM::PreventCopy
 {
 public:
   /* Class interface */
@@ -91,7 +91,6 @@ public:
   bool OpenLiveStream(const PVR_CHANNEL &channel);
   void CloseLiveStream();
   int ReadLiveStream(unsigned char *pBuffer, unsigned int iBufferSize);
-  int GetCurrentClientChannel();
   bool SwitchChannel(const PVR_CHANNEL &channel);
   PVR_ERROR SignalStatus(PVR_SIGNAL_STATUS &signalStatus);
   const char* GetLiveStreamURL(const PVR_CHANNEL &channel);
@@ -100,6 +99,7 @@ public:
   long long PositionLiveStream(void);
   bool CanPauseAndSeek(void);
   void PauseStream(bool bPaused);
+  bool IsRealTimeStream(void);
 
   /* Record stream handling */
   bool OpenRecordedStream(const PVR_RECORDING &recording);
@@ -131,7 +131,7 @@ private:
   time_t                  m_BackendTime;
   CCards                  m_cCards;
   CGenreTable*            m_genretable;
-  PLATFORM::CMutex        m_mutex;
+  P8PLATFORM::CMutex      m_mutex;
   int64_t                 m_iLastRecordingUpdate;
   MPTV::CTsReader*        m_tsreader;
   std::map<int,std::string> m_channelNames;
