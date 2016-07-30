@@ -18,7 +18,7 @@
  */
 
 #include "client.h"
-#include "kodi/xbmc_pvr_dll.h"
+#include "xbmc_pvr_dll.h"
 #include "pvrclient-mediaportal.h"
 #include "utils.h"
 
@@ -444,13 +444,25 @@ void ADDON_FreeSettings()
 
 }
 
-void ADDON_Announce(const char* UNUSED(flag), const char* UNUSED(sender), const char* UNUSED(message), const void* UNUSED(data))
-{
-}
-
 /***********************************************************
  * PVR Client AddOn specific public library functions
  ***********************************************************/
+
+void OnSystemSleep()
+{
+}
+
+void OnSystemWake()
+{
+}
+
+void OnPowerSavingActivated()
+{
+}
+
+void OnPowerSavingDeactivated()
+{
+}
 
 const char* GetPVRAPIVersion(void)
 {
