@@ -1,5 +1,8 @@
-v2.4.4
+v2.4.5
 - Cosmetics: remove the remark about "tsreader + FFmpeg"
+
+v2.4.4
+- Updated language files from Transifex
 
 v2.4.3
 - Updated language files from Transifex
