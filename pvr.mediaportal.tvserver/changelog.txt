@@ -1,5 +1,6 @@
 v2.4.7
 - Add Estuary skin support for the old series timer dialog
+- Fixed: various Coverity reported issues for Live555 (part 2)
 
 v2.4.6
 - Fixed: various Coverity reported issues for Live555
