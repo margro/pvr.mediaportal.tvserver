@@ -337,8 +337,10 @@ void* cPVRClientMediaPortal::Process(void)
     case PVR_CONNECTION_STATE_SERVER_MISMATCH:
     case PVR_CONNECTION_STATE_VERSION_MISMATCH:
       keepWaiting = false;
+      break;
     case PVR_CONNECTION_STATE_CONNECTED:
       keepWaiting = false;
+      break;
     default:
       break;
     }
